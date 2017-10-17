@@ -207,7 +207,6 @@ internals.applyRoutes = function (server, next) {
           name: request.payload.name,
           description: request.payload.description,
           users: request.payload.users,
-          columns: request.payload.columns
         }
       };
 

@@ -4,7 +4,7 @@ const MongoModels = require('mongo-models');
 
 class Schema extends MongoModels {
 
-  static create(name, description, userId, users, columns, callback) {
+  static create(name, description, userId, users, callback) {
 
     const document = {
       name,
@@ -12,7 +12,7 @@ class Schema extends MongoModels {
       userId,
       users,
       comments: [],
-      columns,
+      columns: [],
       approved: [],
       data: [],
       status: 0

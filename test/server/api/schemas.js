@@ -460,8 +460,7 @@ lab.experiment('Schema Plugin Update', () => {
       payload: {
         name: 'name',
         description: 'description',
-        users: 'users',
-        columns: 'columns'
+        users: 'users'
       },
       credentials: AuthenticatedAdmin
     };
@@ -530,7 +529,6 @@ lab.experiment('Schema Plugin Create', () => {
         name: 'name',
         description: 'description',
         users: 'users',
-        columns: 'columns'
       },
       credentials: AuthenticatedAdmin
     };
