@@ -10,25 +10,28 @@ joiToForm('formFields',schema);
 const hotSettings = {
   licenseKey: key,
   data: [
-    ['Column Header',''],
-    ['Column Type',''],
-    ['Example Row',''],
+    [''],
+    [''],
+    [false],
+    [''],
   ],
-  stretchH: 'last',
   colHeaders: true,
-  filters: true,
-  dropdownMenu: true,
+  stretchH: 'all',
+  rowHeaders: ['Column Header','Column Type','Allow Blank','Example Row'],
   manualColumnMove: true,
-  manualColumnResize: true,
+  comments: true,
+  rowHeaderWidth: 200,
+  contextMenu: ['col_left', 'col_right', 'remove_col','undo','redo','commentsAddEdit','commentsRemove'],
   cells: function(row, column) {
     var cellMeta = {};
-    if (column !== 0 && row === 1) {
+    if (row === 1) {
       cellMeta.type = 'dropdown';
       cellMeta.source = ['Text', 'Numeric', 'Checkbox', 'Date', 'Time'];
     }
-    if(column === 0) {
-      cellMeta.readOnly = true;
+    if (row === 2) {
+      cellMeta.type = 'checkbox';
     }
+    cellMeta.allowEmpty = false;
     return cellMeta;
   }
 };
@@ -36,11 +39,14 @@ var hotElement = document.querySelector('#hot');
 var hot = new Handsontable(hotElement, hotSettings);
 
 $('#create').click((event) => {
-  event.preventDefault();
+  event.preventDefault()
   const values = {};
+  values.columns = hot.getDataAtRow(0);
+  values.columns.shift();
   $.each($('#form').serializeArray(), (i, field) => {
     values[field.name] = field.value;
   });
+  console.log(values);
   $.ajax({
     type: 'POST',
     url: '../api/schemas',
