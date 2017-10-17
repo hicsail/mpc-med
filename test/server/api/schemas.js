@@ -528,7 +528,7 @@ lab.experiment('Schema Plugin Create', () => {
       payload: {
         name: 'name',
         description: 'description',
-        users: 'users',
+        users: 'users'
       },
       credentials: AuthenticatedAdmin
     };

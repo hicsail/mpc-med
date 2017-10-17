@@ -5,16 +5,22 @@
       <div style="padding: 30px">
         <h3>Create Schema</h3>
         <hr>
-        <div class="card">
-          <div style="padding: 20px">
-            <form id="form">
+        <form id="form">
+          <div class="card">
+            <div style="padding: 20px">
               <div id="formFields"></div>
-              <button id="create" type="submit" class="btn btn-primary">Create</button>
-            </form>
+              <div id="hot"></div>
+            </div>
           </div>
-        </div>
+          <br>
+          <button id="create" type="submit" class="btn btn-primary">Create</button>
+        </form>
       </div>
     </div>
   </div>
 </div>
+<script>
+  const key = '{{handsontable}}';
+</script>
+
 <script type="text/javascript" src="../../public/scripts/schemas/create.js"></script>

@@ -2,6 +2,7 @@
 const internals = {};
 const Config = require('../../../config');
 const Schema = require('../../models/schema');
+const Env = require('dotenv');
 
 internals.applyRoutes = function (server, next) {
 
@@ -34,7 +35,8 @@ internals.applyRoutes = function (server, next) {
 
       return reply.view('schemas/create', {
         user: request.auth.credentials.user,
-        projectName: Config.get('/projectName')
+        projectName: Config.get('/projectName'),
+        handsontable: Env.config().parsed.HANDSONTABLE
       });
     }
   });
