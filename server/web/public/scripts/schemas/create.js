@@ -1,11 +1,28 @@
 'use strict';
 
-const schema = Joi.object().keys({
-  name: Joi.string().required(),
-  description: Joi.string().required(),
-  users: Joi.string().required()
+$(document).ready(function() {
+  $('#users').select2({
+    ajax: {
+      delay: 250,
+      url: '/api/select2/users',
+      dataType: 'json',
+      processResults: function (data) {
+        var results = [];
+        for(var i = 0; i < data.results.length; i++) {
+          results.push({
+            id: data.results[i]._id,
+            text: data.results[i].name
+          })
+        }
+        data.results = results;
+        return data;
+      },
+      cache: true
+    },
+    placeholder: 'Search for a user by name or email',
+    minimumInputLength: 1,
+  });
 });
-joiToForm('formFields',schema);
 
 const hotSettings = {
   licenseKey: key,
@@ -17,7 +34,7 @@ const hotSettings = {
   ],
   colHeaders: true,
   stretchH: 'all',
-  rowHeaders: ['Column Header','Column Type','Allow Blank','Example Row'],
+  rowHeaders: ['Column Header','Column Type','Allow Blank','Example Data'],
   manualColumnMove: true,
   comments: true,
   rowHeaderWidth: 200,
@@ -39,13 +56,12 @@ var hotElement = document.querySelector('#hot');
 var hot = new Handsontable(hotElement, hotSettings);
 
 $('#create').click((event) => {
-  event.preventDefault()
+  event.preventDefault();
   const values = {};
-  values.columns = hot.getDataAtRow(0);
-  values.columns.shift();
   $.each($('#form').serializeArray(), (i, field) => {
     values[field.name] = field.value;
   });
+  values.users = $('#users').val();
   console.log(values);
   $.ajax({
     type: 'POST',

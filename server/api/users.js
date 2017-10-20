@@ -82,6 +82,50 @@ internals.applyRoutes = function (server, next) {
 
   server.route({
     method: 'GET',
+    path: '/select2/users',
+    config: {
+      auth: {
+        strategies: ['simple', 'jwt', 'session']
+      },
+      validate: {
+        query: {
+          term: Joi.string(),
+          _type: Joi.string(),
+          q: Joi.string()
+        }
+      }
+    },
+    handler: function (request, reply) {
+
+      const query = {
+        $or: [
+          { email: { $regex: request.query.term, $options: 'i' } },
+          { name: { $regex: request.query.term, $options: 'i' } }
+        ]
+
+      };
+      const fields = 'name email';
+      const limit = 25;
+      const page = 1;
+
+      User.pagedFind(query, fields, null, limit, page, (err, results) => {
+
+        if (err) {
+          return reply(err);
+        }
+
+        reply({
+          results: results.data,
+          pagination: {
+            more: results.pages.hasNext
+          }
+        });
+      });
+    }
+  });
+
+  server.route({
+    method: 'GET',
     path: '/users',
     config: {
       auth: {
@@ -179,7 +223,7 @@ internals.applyRoutes = function (server, next) {
     config: {
       auth: {
         strategies: ['simple', 'jwt', 'session'],
-        scope: ['root','admin','researcher']
+        scope: ['root', 'admin', 'researcher']
       },
       validate: {
         payload: User.payload
@@ -503,7 +547,7 @@ internals.applyRoutes = function (server, next) {
     config: {
       auth: {
         strategies: ['simple', 'jwt', 'session'],
-        scope: ['root','admin']
+        scope: ['root', 'admin']
       },
       validate: {
         params: {
@@ -527,7 +571,7 @@ internals.applyRoutes = function (server, next) {
               reply(hash);
             });
           }
-        },{
+        }, {
           assign: 'passwordCheck',
           method: function (request, reply) {
 
@@ -540,7 +584,7 @@ internals.applyRoutes = function (server, next) {
               reply(true);
             });
           }
-        },{
+        }, {
           assign: 'scopeCheck',
           method: function (request, reply) {
 
@@ -610,7 +654,7 @@ internals.applyRoutes = function (server, next) {
             reply(hash);
           });
         }
-      },{
+      }, {
         assign: 'passwordCheck',
         method: function (request, reply) {
 
@@ -652,7 +696,7 @@ internals.applyRoutes = function (server, next) {
     config: {
       auth: {
         strategies: ['simple', 'jwt', 'session'],
-        scope: ['root','admin']
+        scope: ['root', 'admin']
       },
       validate: {
         params: {
