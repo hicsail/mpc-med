@@ -66,6 +66,7 @@ const manifest = {
             Event: './server/models/event',
             Feedback: './server/models/feedback',
             Invite: './server/models/invite',
+            Schema: './server/models/schema',
             Session: './server/models/session',
             Template: './server/models/template',
             Token: './server/models/token',
@@ -159,6 +160,12 @@ const manifest = {
       }
     },
     {
+      plugin: './server/api/schemas',
+      options: {
+        routes: { prefix: '/api' }
+      }
+    },
+    {
       plugin: './server/api/sessions',
       options: {
         routes: { prefix: '/api' }
@@ -220,6 +227,9 @@ const manifest = {
     },
     {
       plugin: './server/web/routes/public'
+    },
+    {
+      plugin: './server/web/routes/schemas'
     },
     {
       plugin: './server/web/routes/sessions'
