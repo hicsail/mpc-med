@@ -4,18 +4,19 @@ const MongoModels = require('mongo-models');
 
 class Schema extends MongoModels {
 
-  static create(name, description, userId, users, callback) {
+  static create(name, description, userId, users, columns, callback) {
 
     const document = {
       name,
       description,
       userId,
       users,
+      columns,
       comments: [],
-      columns: [],
       approved: [],
       data: [],
-      status: 0
+      status: 0,
+      time: new Date()
     };
 
     this.insertOne(document, (err, docs) => {
@@ -49,7 +50,8 @@ Schema.schema = Joi.object().keys({
 Schema.payload = Joi.object().keys({
   name: Joi.string().required(),
   description: Joi.string().required(),
-  users: Joi.string().required()
+  users: Joi.array().required(),
+  columns: Joi.array().required()
 });
 
 

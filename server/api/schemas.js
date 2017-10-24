@@ -206,7 +206,8 @@ internals.applyRoutes = function (server, next) {
         $set: {
           name: request.payload.name,
           description: request.payload.description,
-          users: request.payload.users
+          users: request.payload.users,
+          columns: request.payload.columns
         }
       };
 

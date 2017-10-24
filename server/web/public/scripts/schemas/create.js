@@ -62,11 +62,12 @@ $('#create').click((event) => {
     values[field.name] = field.value;
   });
   values.users = $('#users').val();
-  console.log(values);
+  values.columns = hot.getData();
   $.ajax({
     type: 'POST',
     url: '../api/schemas',
-    data: values,
+    data: JSON.stringify(values),
+    contentType: 'application/json',
     success: function (result) {
       window.location = '../schemas'
     },
