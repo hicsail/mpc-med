@@ -31,7 +31,7 @@ const config = {
       $filter: 'env',
       test: 9090,
       production: process.env.PORT,
-      local: 9000,
+      local: process.env.PORT,
       $default: 9000
     }
   },
@@ -51,7 +51,7 @@ const config = {
         $filter: 'env',
         production: process.env.MONGODB_URI,
         test: 'mongodb://localhost:27017/anchor-test',
-        local: 'mongodb://localhost:27017/anchor',
+        local: process.env.MONGODB_URI,
         $default: 'mongodb://localhost:27017/anchor'
       }
     },
