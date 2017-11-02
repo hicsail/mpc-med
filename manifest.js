@@ -57,7 +57,7 @@ const manifest = {
     },
     {
       plugin: {
-        register: 'hapi-mongo-models',
+        register: 'hicsail-hapi-mongo-models',
         options: {
           mongodb: Config.get('/hapiMongoModels/mongodb'),
           models: {
@@ -68,7 +68,6 @@ const manifest = {
             Invite: './server/models/invite',
             Schema: './server/models/schema',
             Session: './server/models/session',
-            Template: './server/models/template',
             Token: './server/models/token',
             User: './server/models/user'
           },
@@ -107,6 +106,12 @@ const manifest = {
     },
     {
       plugin: './server/api/backups',
+      options: {
+        routes: { prefix: '/api' }
+      }
+    },
+    {
+      plugin: './server/api/clinician',
       options: {
         routes: { prefix: '/api' }
       }
@@ -178,12 +183,6 @@ const manifest = {
       }
     },
     {
-      plugin: './server/api/templates',
-      options: {
-        routes: { prefix: '/api' }
-      }
-    },
-    {
       plugin: './server/api/tokens',
       options: {
         routes: { prefix: '/api' }
@@ -239,9 +238,6 @@ const manifest = {
     },
     {
       plugin: './server/web/routes/signup'
-    },
-    {
-      plugin: './server/web/routes/templates'
     },
     {
       plugin: './server/web/routes/tokens'

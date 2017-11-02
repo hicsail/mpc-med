@@ -2,7 +2,7 @@
 const Async = require('async');
 const Bcrypt = require('bcrypt');
 const Joi = require('joi');
-const MongoModels = require('mongo-models');
+const MongoModels = require('hicsail-mongo-models');
 const Uuid = require('uuid');
 
 
@@ -109,7 +109,7 @@ class Session extends MongoModels {
 Session.collection = 'sessions';
 
 
-Session.schema = Joi.object().keys({
+Session.schema = Joi.object({
   _id: Joi.object(),
   userId: Joi.string().required(),
   key: Joi.string().required(),

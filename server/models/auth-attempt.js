@@ -2,7 +2,7 @@
 const Async = require('async');
 const Config = require('../../config');
 const Joi = require('joi');
-const MongoModels = require('mongo-models');
+const MongoModels = require('hicsail-mongo-models');
 
 
 class AuthAttempt extends MongoModels {
@@ -71,7 +71,7 @@ class AuthAttempt extends MongoModels {
 AuthAttempt.collection = 'authAttempts';
 
 
-AuthAttempt.schema = Joi.object().keys({
+AuthAttempt.schema = Joi.object({
   _id: Joi.object(),
   username: Joi.string().lowercase().required(),
   application: Joi.string().required(),

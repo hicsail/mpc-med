@@ -4,7 +4,7 @@ const Config = require('../../../config');
 
 internals.applyRoutes = function (server, next) {
 
-  const Session = server.plugins['hapi-mongo-models'].Session;
+  const Session = server.plugins['hicsail-hapi-mongo-models'].Session;
 
   server.route({
     method: 'GET',
@@ -29,7 +29,9 @@ internals.applyRoutes = function (server, next) {
         return reply.redirect('/');
       }
       return reply.view('login/login', {
-        projectName: Config.get('/projectName')
+        projectName: Config.get('/projectName'),
+        title: 'Login',
+        baseUrl: Config.get('/baseUrl')
       });
     }
   });

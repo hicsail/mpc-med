@@ -1,6 +1,6 @@
 'use strict';
 const Joi = require('joi');
-const MongoModels = require('mongo-models');
+const MongoModels = require('hicsail-mongo-models');
 
 
 class Feedback extends MongoModels {
@@ -30,7 +30,7 @@ class Feedback extends MongoModels {
 Feedback.collection = 'feedback';
 
 
-Feedback.schema = Joi.object().keys({
+Feedback.schema = Joi.object({
   _id: Joi.object(),
   subject: Joi.string().required(),
   description: Joi.string().required(),
@@ -39,7 +39,7 @@ Feedback.schema = Joi.object().keys({
   time: Joi.date().required()
 });
 
-Feedback.payload = Joi.object().keys({
+Feedback.payload = Joi.object({
   subject: Joi.string().required(),
   description: Joi.string().required()
 });
