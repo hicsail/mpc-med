@@ -1,6 +1,7 @@
 'use strict';
 const Async = require('async');
 const Boom = require('boom');
+const Config = require('../../config');
 const Joi = require('joi');
 
 
@@ -9,8 +10,8 @@ const internals = {};
 
 internals.applyRoutes = function (server, next) {
 
-  const Invite = server.plugins['hapi-mongo-models'].Invite;
-  const User = server.plugins['hapi-mongo-models'].User;
+  const Invite = server.plugins['hicsail-hapi-mongo-models'].Invite;
+  const User = server.plugins['hicsail-hapi-mongo-models'].User;
 
   server.route({
     method: 'GET',
@@ -141,6 +142,8 @@ internals.applyRoutes = function (server, next) {
     },
     handler: function (request, reply) {
 
+      const mailer = request.server.plugins.mailer;
+
       Async.auto({
         invite: function (done) {
 
@@ -157,7 +160,7 @@ internals.applyRoutes = function (server, next) {
           };
           const template = 'invite';
           const context = {
-            url: request.headers.origin + '/invite/' + invite._id.toString(),
+            url: request.headers.origin + '/invite/' + results.invite._id.toString(),
             name: Config.get('/projectName')
           };
 
@@ -305,7 +308,7 @@ internals.applyRoutes = function (server, next) {
 
 exports.register = function (server, options, next) {
 
-  server.dependency(['auth', 'hapi-mongo-models'], internals.applyRoutes);
+  server.dependency(['auth', 'hicsail-hapi-mongo-models'], internals.applyRoutes);
 
   next();
 };

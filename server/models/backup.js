@@ -1,6 +1,6 @@
 'use strict';
 const Joi = require('joi');
-const MongoModels = require('mongo-models');
+const MongoModels = require('hicsail-mongo-models');
 
 
 class Backup extends MongoModels {
@@ -29,7 +29,7 @@ class Backup extends MongoModels {
 Backup.collection = 'backups';
 
 
-Backup.schema = Joi.object().keys({
+Backup.schema = Joi.object({
   _id: Joi.object(),
   backupId: Joi.string().required(),
   zip: Joi.boolean().required(),

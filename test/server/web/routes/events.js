@@ -26,12 +26,12 @@ proxy[Path.join(process.cwd(), './server/models/session')] = stub.Session;
 
 const lab = exports.lab = Lab.script();
 const ModelsPlugin = {
-  register: Proxyquire('hapi-mongo-models', proxy),
+  register: Proxyquire('hicsail-hapi-mongo-models', proxy),
   options: Manifest.get('/registrations').filter((reg) => {
 
     if (reg.plugin &&
       reg.plugin.register &&
-      reg.plugin.register === 'hapi-mongo-models') {
+      reg.plugin.register === 'hicsail-hapi-mongo-models') {
 
       return true;
     }
@@ -139,7 +139,7 @@ lab.experiment('Single Event Page View', () => {
 
     request = {
       method: 'GET',
-      url: '/events-name/APP_OPEN'
+      url: '/events/name/APP_OPEN'
     };
 
     done();
@@ -203,7 +203,7 @@ lab.experiment('User Event Page View', () => {
 
     request = {
       method: 'GET',
-      url: '/events-user/93EP150D35'
+      url: '/events/user/93EP150D35'
     };
 
     done();

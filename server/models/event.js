@@ -1,6 +1,6 @@
 'use strict';
 const Joi = require('joi');
-const MongoModels = require('mongo-models');
+const MongoModels = require('hicsail-mongo-models');
 
 
 class Event extends MongoModels {
@@ -28,14 +28,14 @@ class Event extends MongoModels {
 Event.collection = 'events';
 
 
-Event.schema = Joi.object().keys({
+Event.schema = Joi.object({
   _id: Joi.object(),
   name: Joi.string().required(),
   userId: Joi.boolean().required(),
   time: Joi.date().required()
 });
 
-Event.payload = Joi.object().keys({
+Event.payload = Joi.object({
   name: Joi.string().required()
 });
 

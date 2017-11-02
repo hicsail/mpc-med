@@ -10,7 +10,7 @@ const internals = {};
 
 internals.applyRoutes = function (server, next) {
 
-  const User = server.plugins['hapi-mongo-models'].User;
+  const User = server.plugins['hicsail-hapi-mongo-models'].User;
 
   server.route({
     method: 'GET',
@@ -777,7 +777,7 @@ internals.applyRoutes = function (server, next) {
         return reply(user);
       }
 
-      user.roles.clinician = new Clinician([]);
+      user.roles.clinician = Clinician.create([]);
       const update = {
         $set: {
           roles: user.roles
@@ -1334,7 +1334,7 @@ internals.applyRoutes = function (server, next) {
 
 exports.register = function (server, options, next) {
 
-  server.dependency(['auth', 'hapi-mongo-models'], internals.applyRoutes);
+  server.dependency(['auth', 'hicsail-hapi-mongo-models'], internals.applyRoutes);
 
   next();
 };
