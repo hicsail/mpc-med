@@ -137,22 +137,43 @@ internals.applyRoutes = function (server, next) {
     config: {
       auth: {
         strategies: ['simple', 'jwt', 'session']
-      }
+      },
+      pre: [{
+        assign: 'schema',
+        method: function (request, reply) {
+
+          Schema.findById(request.params.id, (err, document) => {
+
+            if (err) {
+              return reply(err);
+            }
+
+            if (!document) {
+              return reply(Boom.notFound('Document not found.'));
+            }
+
+            reply(document);
+          });
+        }
+      },{
+        assign: 'access',
+        method: function (request, reply) {
+
+          const schema = request.pre.schema;
+          const userId = request.auth.credentials.user._id.toString();
+
+          if (schema.userId === userId || schema.users.indexOf(userId) >= 0) {
+            reply(schema);
+          }
+          else {
+            return reply(Boom.unauthorized('You do not have access to this schema.'));
+          }
+        }
+      }]
     },
     handler: function (request, reply) {
 
-      Schema.findById(request.params.id, (err, document) => {
-
-        if (err) {
-          return reply(err);
-        }
-
-        if (!document) {
-          return reply(Boom.notFound('Document not found.'));
-        }
-
-        reply(document);
-      });
+      reply(request.pre.access);
     }
   });
 

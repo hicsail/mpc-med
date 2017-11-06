@@ -23,3 +23,7 @@ function deleteDoc(id) {
 function editDoc(id) {
   window.location = '../schemas/' + id
 }
+
+function viewDoc(id) {
+  window.location = '../schemas/' + id
+}
