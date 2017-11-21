@@ -22,9 +22,9 @@ const config = {
   baseUrl: {
     $filter: 'env',
     production: process.env.BASE_URL,
-    test: 'localhost:9090',
+    test: 'http://localhost:9090/',
     local: process.env.BASE_URL,
-    $default: 'localhost:9000'
+    $default: 'http://localhost:9000/'
   },
   port: {
     web: {
