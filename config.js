@@ -42,7 +42,7 @@ const config = {
   authSecret: {
     $filter: 'env',
     production: process.env.AUTH_SECRET,
-    local: '!k3yb04rdK4tz~4qu4~k3yb04rdd0gz!',
+    local: process.env.AUTH_SECRET,
     $default: '!k3yb04rdK4tz~4qu4~k3yb04rdd0gz!'
   },
   hapiMongoModels: {

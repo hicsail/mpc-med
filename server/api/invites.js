@@ -142,8 +142,6 @@ internals.applyRoutes = function (server, next) {
     },
     handler: function (request, reply) {
 
-      const mailer = request.server.plugins.mailer;
-
       Async.auto({
         invite: function (done) {
 
@@ -163,6 +161,7 @@ internals.applyRoutes = function (server, next) {
             url: request.headers.origin + '/invite/' + results.invite._id.toString(),
             name: Config.get('/projectName')
           };
+          const mailer = request.server.plugins.mailer;
 
           mailer.sendEmail(emailOptions, template, context, (err) => {
 
