@@ -13,7 +13,7 @@
       <div style="padding: 30px">
         <h3>Submit spreadsheet</h3>
         <hr>
-        <form id="form">
+
           <div class="card">
             <div style="padding: 20px">
 
@@ -66,9 +66,7 @@
           </div>
 
 
-          <br>
-          <button id="create" type="submit" class="btn btn-primary">Create</button>
-        </form>
+        
       </div>
     </div>
   </div>
@@ -119,10 +117,10 @@
     });
     /*spinner.stop();*/
   };
-  /*var boldRenderer = function (instance, td, row, col, prop, value, cellProperties) {
-    Handsontable.TextCell.renderer.apply(this, arguments);
+  var boldRenderer = function (instance, td, row, col, prop, value, cellProperties) {
+    Handsontable.renderers.TextRenderer.apply(this, arguments);
     $(td).css({'font-weight': 'bold'});
-  };*/
+  };
   var make_buttons = function (sheetnames, cb) {
     var $buttons = $('#buttons');
     $buttons.html('');
@@ -139,7 +137,7 @@
   };
   var $window, availableWidth, availableHeight;
   var calculateSize = function () {
-    availableWidth = Math.max($('#drop').width(), 600);
+    availableWidth = Math.max($('#spreadsheet_view').width(), 600);
     availableHeight = Math.max($window.height()/4, 400);
   };
   var _onsheet = function (json, cols) {
@@ -201,11 +199,11 @@
         colHeaders: cols.map(function (x, i) {
           return XLS.utils.encode_col(i);
         }),
-        /*cells: function (r, c, p) {
+        cells: function (r, c, p) {
           if (r === 0) {
             this.renderer = boldRenderer;
           }
-        },*/
+        },
         width: function () {
           return availableWidth;
         },
