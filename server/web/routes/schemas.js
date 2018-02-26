@@ -36,8 +36,7 @@ internals.applyRoutes = function (server, next) {
 
       return reply.view('schemas/create', {
         user: request.auth.credentials.user,
-        projectName: Config.get('/projectName'),
-        handsontable: Env.config().parsed.HANDSONTABLE
+        projectName: Config.get('/projectName')
       });
     }
   });
