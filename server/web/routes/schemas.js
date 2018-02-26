@@ -1,7 +1,7 @@
 'use strict';
 const internals = {};
 const Config = require('../../../config');
-const Env = require('dotenv');
+//const Env = require('dotenv');
 const MongoModels = require('mongo-models');
 const User = require('../../models/user');
 
