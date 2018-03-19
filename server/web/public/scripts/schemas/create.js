@@ -196,6 +196,11 @@ var DropSheet = function DropSheet(opts) {
           continue;
         }
 
+        // Ignore the header row.
+        if (identifier_coordinates['r'] === i) {
+          continue;
+        }
+
 
         // Row of table may contain well coordinates.
         var row_well_coordinates = getWellCoordinates(row_info['well_coordinates'], i);
