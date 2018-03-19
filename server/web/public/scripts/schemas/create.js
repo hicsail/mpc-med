@@ -101,69 +101,205 @@ var DropSheet = function DropSheet(opts) {
 
 
   // Parses workbook for relevant cells.
-  function processWB(wb, type, sheetidx) {
+  function processWB(wb, type) {
 
-    // Process first ws only by default
-    var processed_data = processWSOnly(wb.Sheets[wb.SheetNames[0]]);
+    // Process first worksheet only by default.
 
-    console.log(processed_data);
+    /* TODO: find better way to differentiate workbook types - ie BU format vs other format? */
+
+    var processed_data = new Object();
+
+    // Tables all on one sheet.
+    if (wb.SheetNames.length < 3) {
+      processed_data = processWSOnly(wb.Sheets[wb.SheetNames[0]]);
+
+    } else {
+
+      // Otherwise this is a multisheet workbook.
+      for (var sheetidx = 0; sheetidx < wb.SheetNames.length; sheetidx++) {
+        var current_sheet = wb.Sheets[wb.SheetNames[sheetidx]];
+
+        var sheet_name = wb.SheetNames[sheetidx];
+
+        var sheet_output = processWSMultiSheet(current_sheet, sheet_name, []);
+        if (!sheet_output) {
+          continue;
+        }
+
+        processed_data[sheet_name] = sheet_output;
+
+      }
+    }
+
+    //console.log(processed_data);
+
     const cols = ['Location', 'Identifier', 'Analyte', 'Value'];
 
     opts.on.sheet(processed_data, cols);
 
-    if (sheetidx === null) {
-      // Check tab names are valid.
-
-      // for (tableidx = 0; tableidx < opts.tables_def.tables.length; tableidx++) {
-      //   if (opts.tables_def.tables[tableidx].excel !== undefined) {
-      //     current_sheet = opts.tables_def.tables[tableidx].excel[0].sheet;
-      //
-      //     if (wb.SheetNames.indexOf(current_sheet) === -1) {
-      //       // Should override anything that was in HOT originally in case of reupload.
-      //       opts.tables[tableidx].clear();
-      //       alertify.alert("<img src='/images/cancel.png' alt='Error'>Error!",
-      //         "Please make sure spreadsheet tab names match those of original template. Tab '" + current_sheet
-      //         + "' not found.");
-      //       return;
-      //     }
-      //   }
-      // }
-    }
-
-    // // Corresponds to number of tables that are submitted.
-    // var checks = [];
-    // for (var i = 0; i < opts.tables_def.tables.length; i++) {
-    //   if (opts.tables_def.tables[i].submit === null || opts.tables_def.tables[i].submit) {
-    //     checks.push(false);
-    //   }
-    // }
-
-    // // Loop through xlsx worksheets and tables.
-    // for (sheetidx = 0; sheetidx < wb.SheetNames.length; sheetidx++) {
-    //   current_sheet = wb.Sheets[wb.SheetNames[sheetidx]];
-    //   for (tableidx = 0; tableidx < opts.tables_def.tables.length; tableidx++) {
-    //
-    //     if (opts.tables_def.tables[tableidx].excel !== undefined && opts.tables_def.tables[tableidx].excel !== null && opts.tables_def.tables[tableidx].excel[0] !== null) {
-    //       if (opts.tables_def.tables[tableidx].excel[0].sheet === wb.SheetNames[sheetidx]) {
-    //         checks[tableidx] = processWS(current_sheet, opts.tables_def.tables[tableidx], opts.tables[tableidx]);
-    //
-    //       }
-    //     }
-    //
-    //   }
-    // }
-    //
-    // // Assumes all tables updated.
-    // if (checks.indexOf(false) === -1) {
-    //   alertify.alert('<img src="/images/accept.png" alt="Success">Success',
-    //     'The tables below have been populated. Please confirm that your data is accurate and scroll down to answer the multiple choice questions, verify, and submit your data');
-    //   return true; // no errors.
-    // }
-
-    return false; // There are some errors.
+    return false;
   }
 
-  // Helper functions.
+  /*
+  Main function called for each sheet.
+   **/
+
+  function processWSOnly(ws) {
+
+    const sheet_arr = XLSX.utils.sheet_to_json(ws, {header: 1});
+
+    var row_info = new Object();
+
+    row_info = findTypeRowsUsingTitles(sheet_arr, row_info);
+
+    row_info = findMiscHeaders(sheet_arr, row_info);
+
+    row_info = findWellRows(sheet_arr, row_info);
+
+    row_info = findAnalyteRows(sheet_arr, row_info);
+
+    // Names of special columns on the spreadsheet.
+    const well_header_name = 'Location';
+    const analyte_header_name = 'Sample';
+
+    // Build up object.
+
+    var formatted_data = new Object();
+    var entry;
+
+    // Process each table.
+
+    for (var r = 0; r < row_info.table_rows.length; r++) {
+
+      var identifier_coordinates = row_info['table_rows'][r]['identifier_coordinates'];
+
+      var table_type = row_info['table_rows'][r]['type'];
+
+      // Table does not have analyte-based info; this table will not be output and can be ignored.
+      if (!row_info['table_rows'][r]['analyte_cols']) {
+        continue;
+      }
+
+      // For each table, loop through rows.
+
+      var table_object = [];
+
+
+      for (var i = row_info['table_rows'][r].start; i <= row_info['table_rows'][r].end; i++) {
+
+        // Ignore blank rows.
+        if (numEntries(sheet_arr[i]) === 0) {
+          continue;
+        }
+
+        // Ignore header row.
+
+        if (row_info['table_rows'][r].header_row === i) {
+          continue;
+        }
+
+
+        // Row of table may contain well coordinates.
+        var row_well_coordinates = getWellCoordinates(row_info['well_coordinates'], i);
+
+        // Check all possible analytes.
+
+        for (var b = 0; b < row_info['table_rows'][r]['analyte_cols'].length; b++) {
+
+          // Get value of cell.
+          var analyte_name = row_info['table_rows'][r]['analyte_cols'][b]['analyte'];
+          var analyte_col = row_info['table_rows'][r]['analyte_cols'][b]['c'];
+          entry = new Object();
+          entry['Analyte'] = analyte_name;
+          var cell_val = sheet_arr[i][analyte_col];
+
+
+          entry['Value'] = convertValue(cell_val);
+
+          if (row_well_coordinates.r !== -1) {
+            entry['Location'] = sheet_arr[i][row_well_coordinates.c];
+          }
+
+          if (identifier_coordinates !== null) {
+            entry['Identifier'] = sheet_arr[i][identifier_coordinates.c];
+          }
+
+          if (!(entry['Identifier'] === '' && entry['Value'] === '')) {
+            table_object.push(entry);
+          }
+
+        }
+      }
+
+      formatted_data[table_type] = table_object;
+    }
+
+    return formatted_data;
+  }
+
+  function processWSMultiSheet(ws, sheet_name, formatted_data) {
+
+    const sheet_arr = XLSX.utils.sheet_to_json(ws, {header: 1});
+
+    var row_info = new Object();
+
+    // Look for sheet name in the sheet to define it as a valid sheet for parsing.
+    // If not, return early.
+    if (!checkSheet(sheet_arr, sheet_name)) {
+      return false;
+    }
+
+    // Then look for wells to define the table header row.
+
+
+    row_info = findWellRowsMS(sheet_arr, row_info);
+
+    // Go two rows above to look for the row for the analytes.
+
+    const table_body_start = row_info['well_coordinates'][0]['r'];
+    row_info = getAnalyteList(sheet_arr, row_info, table_body_start - 2);
+
+    // Get identifier names from 'Type' column.
+    const identifier_col_name = 'Type';
+    const identifier_col_ind = findColumnOf(sheet_arr, identifier_col_name);
+
+
+    // Columns determined by analyte list.
+    // Relevant rows determined by well list.
+
+    var cell_val;
+    var cell_val_r;
+    var cell_val_c;
+    var entry;
+
+    for (var i = 0; i < row_info['well_coordinates'].length; i++) {
+      for (var j = 0; j < row_info['analyte_list'].length; j++) {
+        cell_val_r = row_info['well_coordinates'][i].r;
+        cell_val_c = row_info['analyte_list'][j].c;
+        cell_val = sheet_arr[cell_val_r][cell_val_c];
+
+        entry = new Object();
+
+        entry['Value'] = convertValue(cell_val);
+
+        entry['Identifier'] = sheet_arr[cell_val_r][identifier_col_ind];
+        entry['Location'] = row_info['well_coordinates'][i].well;
+
+        entry['Analyte'] = row_info['analyte_list'][j].analyte;
+
+        formatted_data.push(entry);
+        console.log(entry);
+
+      }
+    }
+
+    console.log(formatted_data);
+
+    return formatted_data;
+
+  }
+
+  /* Helper functions common to single and multisheet parsing. */
 
   function arrayMax(array) {
     return array.reduce((a, b) => Math.max(a, b));
@@ -184,6 +320,44 @@ var DropSheet = function DropSheet(opts) {
       }, -1);
   }
 
+
+
+  // Convert value of a cell as needed.
+
+  function convertValue(cell_val) {
+
+    var pattern = /(<|>)\s*[0-9]+.[0-9]+/i;
+    var new_val;
+
+    // Convert type of value as needed.
+    if (cell_val === '') {
+      new_val = '';
+    }
+    else if (!isNaN(cell_val)) {
+      // Value of cell is numeric.
+      new_val = new Object({'val': Number(cell_val), 'sign': '='});
+
+    } else if (pattern.exec(cell_val)) {
+      // Value of cell has a > or < component.
+      var val = cell_val.split(/<|>/)[1].trim();
+      if (!isNaN(val)) {
+        var sign = cell_val.indexOf('<') !== -1 ? '<' : '>';
+
+        new_val = new Object({'val': Number(val), 'sign': sign});
+      }
+
+    } else {
+      new_val = cell_val;
+    }
+
+    return new_val;
+
+  }
+
+
+  /*
+   Helper functions for single sheet parsing.
+    */
 
   function getType(row) {
     const types = [
@@ -473,7 +647,7 @@ var DropSheet = function DropSheet(opts) {
 
 
         if (sheet_arr[i].indexOf(identifier_header_name) !== -1) {
-          row_info['table_rows'][r]['identifier_coordinates'] =  {r: i, c: sheet_arr[i].indexOf(identifier_header_name)} ;
+          row_info['table_rows'][r]['identifier_coordinates'] = {r: i, c: sheet_arr[i].indexOf(identifier_header_name)};
         }
 
       }
@@ -482,120 +656,93 @@ var DropSheet = function DropSheet(opts) {
     return row_info;
   }
 
-  function processWSOnly(ws) {
 
-    const sheet_arr = XLSX.utils.sheet_to_json(ws, {header: 1});
 
-    var row_info = new Object();
+  /*
 
-    row_info = findTypeRowsUsingTitles(sheet_arr, row_info);
+  Helper functions for multisheet parsing
 
-    row_info = findMiscHeaders(sheet_arr, row_info);
+   */
 
-    row_info = findWellRows(sheet_arr, row_info);
 
-    row_info = findAnalyteRows(sheet_arr, row_info);
+  // Function checks if sheet name is contained within sheet itself.
+  function checkSheet(sheet_arr, sheet_name) {
 
-    // Names of special columns on the spreadsheet.
-    const well_header_name = 'Location';
-    const analyte_header_name = 'Sample';
+    for (var i = 0; i < sheet_arr.length; i++) {
+      if (sheet_arr[i].indexOf(sheet_name) !== -1) {
+        return true;
+      }
+    }
+    return false;
+  }
 
-    // Build up object.
+  // Function that looks for row/column values of well locations.
+  function findWellRowsMS(sheet_arr, row_info) {
 
-    var formatted_data = new Object();
-    var entry;
 
-    // Process each table.
+    var well_coordinates = [];
+    var cell_val;
 
-    for (var r = 0; r < row_info.table_rows.length; r++) {
+    for (var i = 0; i < sheet_arr.length; i++) {
+      for (var j = 0; j < sheet_arr[i].length; j++) {
 
-      var identifier_coordinates = row_info['table_rows'][r]['identifier_coordinates'];
+        var pattern = /[a-z][0-9]+,[a-z][0-9]+/i;
+        cell_val = sheet_arr[i][j];
 
-      var table_type = row_info['table_rows'][r]['type'];
+        if (pattern.exec(cell_val)) {
+          well_coordinates.push({r: i, c: j, well: cell_val});
+        }
+      }
+    }
 
-      // Table does not have analyte-based info; this table will not be output and can be ignored.
-      if (!row_info['table_rows'][r]['analyte_cols']) {
+    row_info.well_coordinates = well_coordinates;
+
+    return row_info;
+  }
+
+  // Get list of analytes and coordinates.
+  function getAnalyteList(sheet_arr, row_info, row_num) {
+
+    var analyte_list = [];
+
+    var cell_val;
+
+    // Loop through analytes and strip analyte name of certain special chars.
+
+    for (var j = 0; j < sheet_arr[row_num].length; j++) {
+
+      cell_val = sheet_arr[row_num][j];
+
+      if (cell_val === undefined || cell_val === '') {
         continue;
       }
 
-      // For each table, loop through rows.
+      cell_val = cell_val.replace(/\([0-9]*\)/g, '').replace(/\s/i, '').replace(/[^a-zA-Z0-9\/]/g, '');
 
-      var table_object = [];
+      console.log(cell_val);
 
+      analyte_list.push({analyte: cell_val, r: row_num, c: j});
 
-      for (var i = row_info['table_rows'][r].start; i <= row_info['table_rows'][r].end; i++) {
-
-        // Ignore blank rows.
-        if (numEntries(sheet_arr[i]) === 0) {
-          continue;
-        }
-
-        // Ignore header row.
-
-        if (row_info['table_rows'][r].header_row === i) {
-          continue;
-        }
-
-
-        // Row of table may contain well coordinates.
-        var row_well_coordinates = getWellCoordinates(row_info['well_coordinates'], i);
-
-        // Check all possible analytes.
-
-        for (var b = 0; b < row_info['table_rows'][r]['analyte_cols'].length; b++) {
-
-          // Get value of cell.
-          var analyte_name = row_info['table_rows'][r]['analyte_cols'][b]['analyte'];
-          var analyte_col = row_info['table_rows'][r]['analyte_cols'][b]['c'];
-          entry = new Object();
-          entry['Analyte'] = analyte_name;
-          var cell_val = sheet_arr[i][analyte_col];
-
-
-          var pattern = /(<|>)\s*[0-9]+.[0-9]+/i;
-
-          // Convert type of value as needed.
-          if (cell_val === '') {
-            entry['Value'] = '';
-          }
-          else if (!isNaN(cell_val)) {
-            // Value of cell is numeric.
-            entry['Value'] = new Object({'val': Number(cell_val) , 'sign': '='});
-
-          } else if (pattern.exec(cell_val)) {
-            // Value of cell has a > or < component.
-            var val = cell_val.split(/<|>/)[1].trim();
-            if (!isNaN(val)) {
-              var sign = cell_val.indexOf('<') !== -1 ? '<' : '>';
-
-              entry['Value'] = new Object({'val': Number(val), 'sign': sign});
-            }
-
-          } else {
-            entry['Value'] = cell_val;
-          }
-
-          if (row_well_coordinates.r !== -1) {
-            entry['Location'] = sheet_arr[i][row_well_coordinates.c];
-          }
-
-          if (identifier_coordinates !== null) {
-            entry['Identifier'] = sheet_arr[i][identifier_coordinates.c];
-          }
-
-          if (!(entry['Identifier'] === '' && entry['Value'] === '')) {
-            table_object.push(entry);
-          }
-
-        }
-      }
-
-      formatted_data[table_type] = table_object;
     }
 
-    return formatted_data;
+    row_info['analyte_list'] = analyte_list;
+
+    return row_info;
   }
 
+
+  // General function to find the column index of a 'search term'.
+  function findColumnOf(arr, term) {
+    for (var i = 0; i < arr.length; i++) {
+      for (var j = 0; j < arr[i].length; j++) {
+        if (arr[i][j] === term) {
+          return j;
+        }
+      }
+    }
+
+    return -1;
+  }
 
   // For drag-and-drop.
 
