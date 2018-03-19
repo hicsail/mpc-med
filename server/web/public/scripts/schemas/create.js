@@ -113,6 +113,8 @@ var DropSheet = function DropSheet(opts) {
     if (wb.SheetNames.length < 3) {
       processed_data = processWSOnly(wb.Sheets[wb.SheetNames[0]]);
 
+      console.log(processed_data);
+
     } else {
 
       // Otherwise this is a multisheet workbook.
@@ -156,7 +158,7 @@ var DropSheet = function DropSheet(opts) {
 
     row_info = findWellRows(sheet_arr, row_info);
 
-    row_info = findAnalyteRows(sheet_arr, row_info);
+    //row_info = findAnalyteRows(sheet_arr, row_info);
 
     // Names of special columns on the spreadsheet.
     const well_header_name = 'Location';
@@ -171,18 +173,20 @@ var DropSheet = function DropSheet(opts) {
 
     for (var r = 0; r < row_info.table_rows.length; r++) {
 
+      // Row/column for identifier.
       var identifier_coordinates = row_info['table_rows'][r]['identifier_coordinates'];
 
       var table_type = row_info['table_rows'][r]['type'];
 
-      // Table does not have analyte-based info; this table will not be output and can be ignored.
-      if (!row_info['table_rows'][r]['analyte_cols']) {
-        continue;
-      }
 
       // For each table, loop through rows.
 
       var table_object = [];
+
+      // Table does not have identifier column; this table will not be output and can be ignored.
+      if (!identifier_coordinates) {
+        continue;
+      }
 
 
       for (var i = row_info['table_rows'][r].start; i <= row_info['table_rows'][r].end; i++) {
@@ -192,23 +196,26 @@ var DropSheet = function DropSheet(opts) {
           continue;
         }
 
-        // Ignore header row.
-
-        if (row_info['table_rows'][r].header_row === i) {
-          continue;
-        }
-
 
         // Row of table may contain well coordinates.
         var row_well_coordinates = getWellCoordinates(row_info['well_coordinates'], i);
 
-        // Check all possible analytes.
 
-        for (var b = 0; b < row_info['table_rows'][r]['analyte_cols'].length; b++) {
+        // Obtain list of possibly valid analytes for the table, ignoring certain words that are blacklisted.
+        var blacklist = ['Location', 'Sample', 'TotalEvents', 'Total Events', 'Reagent', 'Analyte', 'Analyte:', 'UserId', 'Location', 'Date', 'Status', 'Message', 'DilutionFactor', 'Dilution Factor'];
+        var analyte_list = new Object();
 
-          // Get value of cell.
-          var analyte_name = row_info['table_rows'][r]['analyte_cols'][b]['analyte'];
-          var analyte_col = row_info['table_rows'][r]['analyte_cols'][b]['c'];
+        analyte_list = getAnalyteList(sheet_arr, analyte_list, identifier_coordinates['r'], blacklist);
+
+        // Table does not have analyte-based info; this table will not be output and can be ignored.
+        if (analyte_list === undefined || analyte_list['analyte_list'] === undefined || analyte_list['analyte_list'].length === 0) {
+          continue;
+        }
+
+        for (var j = 0; j < analyte_list['analyte_list'].length; j++) {
+          var analyte_name = analyte_list['analyte_list'][j].analyte;
+          var analyte_col = analyte_list['analyte_list'][j].c;
+
           entry = new Object();
           entry['Analyte'] = analyte_name;
           var cell_val = sheet_arr[i][analyte_col];
@@ -221,14 +228,13 @@ var DropSheet = function DropSheet(opts) {
           }
 
           if (identifier_coordinates !== null) {
-            entry['Identifier'] = sheet_arr[i][identifier_coordinates.c];
+            entry['Identifier'] = sheet_arr[i][identifier_coordinates['c']];
           }
 
-          if (!(entry['Identifier'] === '' && entry['Value'] === '')) {
-            table_object.push(entry);
-          }
+          table_object.push(entry);
 
         }
+
       }
 
       formatted_data[table_type] = table_object;
@@ -249,7 +255,7 @@ var DropSheet = function DropSheet(opts) {
       return false;
     }
 
-    // Then look for wells to define the table header row.
+    // Then look for wells to define the table header row (row w/o analyte names, but has other header labels).
 
 
     row_info = findWellRowsMS(sheet_arr, row_info);
@@ -257,7 +263,7 @@ var DropSheet = function DropSheet(opts) {
     // Go two rows above to look for the row for the analytes.
 
     const table_body_start = row_info['well_coordinates'][0]['r'];
-    row_info = getAnalyteList(sheet_arr, row_info, table_body_start - 2);
+    row_info = getAnalyteList(sheet_arr, row_info, table_body_start - 2, []);
 
     // Get identifier names from 'Type' column.
     const identifier_col_name = 'Type';
@@ -288,12 +294,12 @@ var DropSheet = function DropSheet(opts) {
         entry['Analyte'] = row_info['analyte_list'][j].analyte;
 
         formatted_data.push(entry);
-        console.log(entry);
+        //console.log(entry);
 
       }
     }
 
-    console.log(formatted_data);
+    //console.log(formatted_data);
 
     return formatted_data;
 
@@ -603,7 +609,6 @@ var DropSheet = function DropSheet(opts) {
 
             if (cell_val === analytes[b].toUpperCase() && (sheet_arr[i].indexOf(identifier_header_name) !== -1 || sheet_arr[i].indexOf(identifier_header_name.toUpperCase()) !== -1)) {
 
-              // May want to keep track of other things here.
               analyte_rows_set.add(i);
               row_info['table_rows'][r].start = i;
 
@@ -646,8 +651,10 @@ var DropSheet = function DropSheet(opts) {
       for (var i = row_info['table_rows'][r].start; i <= row_info['table_rows'][r].end; i++) {
 
 
-        if (sheet_arr[i].indexOf(identifier_header_name) !== -1) {
-          row_info['table_rows'][r]['identifier_coordinates'] = {r: i, c: sheet_arr[i].indexOf(identifier_header_name)};
+        for (var j = 0; j < sheet_arr[i].length; j++) {
+          if (sheet_arr[i][j] === identifier_header_name) {
+            row_info['table_rows'][r]['identifier_coordinates'] = {r: i, c: j};
+          }
         }
 
       }
@@ -701,7 +708,8 @@ var DropSheet = function DropSheet(opts) {
   }
 
   // Get list of analytes and coordinates.
-  function getAnalyteList(sheet_arr, row_info, row_num) {
+  // blacklist - list of cell values that should be ignored.
+  function getAnalyteList(sheet_arr, row_info, row_num, blacklist) {
 
     var analyte_list = [];
 
@@ -717,11 +725,25 @@ var DropSheet = function DropSheet(opts) {
         continue;
       }
 
-      cell_val = cell_val.replace(/\([0-9]*\)/g, '').replace(/\s/i, '').replace(/[^a-zA-Z0-9\/]/g, '');
+      var isBlacklisted = false;
 
-      console.log(cell_val);
+      // Do not consider certain cell values to be analytes in the row.
+      if (blacklist && blacklist.length > 0) {
+        for (var v = 0; v < blacklist.length; v++) {
+          if (cell_val === blacklist[v]) {
+            isBlacklisted = true;
+          }
+        }
+      }
 
-      analyte_list.push({analyte: cell_val, r: row_num, c: j});
+      if (isBlacklisted) {
+        continue;
+      } else {
+        cell_val = cell_val.replace(/\([0-9]*\)/g, '').replace(/\s/i, '').replace(/[^a-zA-Z0-9\/]/g, '');
+
+        analyte_list.push({analyte: cell_val, r: row_num, c: j});
+      }
+
 
     }
 
