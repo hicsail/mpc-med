@@ -343,8 +343,9 @@ var DropSheet = function DropSheet(opts) {
     // Convert type of value as needed.
     if (cell_val === '') {
       new_val = '';
-    }
-    else if (!isNaN(cell_val)) {
+    } else if (cell_val === undefined) {
+      new_val = '';
+    } else if (!isNaN(cell_val)) {
       // Value of cell is numeric.
       new_val = new Object({'val': Number(cell_val), 'sign': '='});
 
@@ -657,7 +658,7 @@ var DropSheet = function DropSheet(opts) {
 
 
         for (var j = 0; j < sheet_arr[i].length; j++) {
-          if (sheet_arr[i][j] === identifier_header_name) {
+          if (sheet_arr[i][j].trim() === identifier_header_name.trim()) {
             row_info['table_rows'][r]['identifier_coordinates'] = {r: i, c: j};
           }
         }
@@ -728,6 +729,8 @@ var DropSheet = function DropSheet(opts) {
 
       if (cell_val === undefined || cell_val === '') {
         continue;
+      } else {
+        cell_val = cell_val.slice().trim();
       }
 
       var isBlacklisted = false;
@@ -735,7 +738,8 @@ var DropSheet = function DropSheet(opts) {
       // Do not consider certain cell values to be analytes in the row.
       if (blacklist && blacklist.length > 0) {
         for (var v = 0; v < blacklist.length; v++) {
-          if (cell_val === blacklist[v]) {
+
+          if (cell_val === blacklist[v].trim()) {
             isBlacklisted = true;
           }
         }
@@ -762,7 +766,7 @@ var DropSheet = function DropSheet(opts) {
   function findColumnOf(arr, term) {
     for (var i = 0; i < arr.length; i++) {
       for (var j = 0; j < arr[i].length; j++) {
-        if (arr[i][j] === term) {
+        if (arr[i][j] && arr[i][j].trim() === term.trim()) {
           return j;
         }
       }
